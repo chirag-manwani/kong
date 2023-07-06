@@ -1,0 +1,7 @@
+message: Fix a Request-Transformer-Advanced plugin bug
+type: bugfix
+scope: Plugin
+pr: 11
+jiras:
+  - KAG-1
+  - KAG-2

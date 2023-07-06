@@ -1,0 +1,7 @@
+message: Add a enterprise new feature
+type: feature
+scope: Core
+pr: 10
+issues:
+  - 1
+  - 2
