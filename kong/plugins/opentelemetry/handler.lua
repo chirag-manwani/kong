@@ -14,6 +14,7 @@ local ngx_DEBUG = ngx.DEBUG
 local ngx_now = ngx.now
 local ngx_update_time = ngx.update_time
 local ngx_req = ngx.req
+local ngx_var = ngx.var
 local ngx_get_headers = ngx_req.get_headers
 local propagation_parse = propagation.parse
 local propagation_set = propagation.set
@@ -113,6 +114,7 @@ function OpenTelemetryHandler:access(conf)
   if trace_id then
     root_span.trace_id = trace_id
     kong.ctx.plugin.trace_id = trace_id
+    ngx_var.request_trace_id = to_hex(trace_id)
   end
 
   -- overwrite root span's parent_id

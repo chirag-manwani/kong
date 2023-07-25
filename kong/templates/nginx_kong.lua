@@ -23,6 +23,25 @@ lua_shared_dict kong_db_cache               ${{MEM_CACHE_SIZE}};
 lua_shared_dict kong_db_cache_miss          12m;
 lua_shared_dict kong_secrets                5m;
 
+map $request_trace_id $log_tr_id {
+    default            0;
+    "~*^[a-fA-F0-9]+$" 1;
+}
+
+map $request_trace_id $log_def {
+    default            1;
+    "~*^[a-fA-F0-9]+$" 0;
+}
+
+log_format def '$remote_addr - $remote_user [$time_local] '
+               '"$request" $status $body_bytes_sent '
+               '"$http_referer" "$http_user_agent"';
+
+log_format tr_id '[$request_trace_id] '
+                 '$remote_addr - $remote_user [$time_local] '
+                 '"$request" $status $body_bytes_sent '
+                 '"$http_referer" "$http_user_agent"';
+
 underscores_in_headers on;
 > if ssl_ciphers then
 ssl_ciphers ${{SSL_CIPHERS}};
@@ -72,7 +91,8 @@ server {
     error_page 400 404 405 408 411 412 413 414 417 494 /kong_error_handler;
     error_page 500 502 503 504                     /kong_error_handler;
 
-    access_log ${{PROXY_ACCESS_LOG}};
+    access_log ${{PROXY_ACCESS_LOG}} tr_id if=$log_tr_id;
+    access_log ${{PROXY_ACCESS_LOG}} def if=$log_def;
     error_log  ${{PROXY_ERROR_LOG}} ${{LOG_LEVEL}};
 
 > if proxy_ssl_enabled then
@@ -130,6 +150,7 @@ server {
         set $upstream_x_forwarded_port   '';
         set $upstream_x_forwarded_path   '';
         set $upstream_x_forwarded_prefix '';
+        set $request_trace_id      '';
         set $kong_proxy_mode             'http';
 
         proxy_http_version      1.1;

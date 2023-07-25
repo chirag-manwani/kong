@@ -123,6 +123,8 @@ if subsystem == "http" then
       span_name = method .. ' ' .. path
     end
 
+    ngx_var.request_trace_id = to_hex(trace_id)
+
     local request_span = new_span(
       "SERVER",
       span_name,

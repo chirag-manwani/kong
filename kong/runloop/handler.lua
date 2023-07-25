@@ -48,6 +48,7 @@ local clear_header      = ngx.req.clear_header
 local http_version      = ngx.req.http_version
 local escape            = require("kong.tools.uri").escape
 local encode            = require("string.buffer").encode
+local to_hex            = require("resty.string").to_hex
 
 
 local is_http_module   = subsystem == "http"
@@ -921,6 +922,15 @@ local function set_init_versions_in_cache()
 end
 
 
+local function set_trace_id_var()
+  local root_span = ngx.ctx.KONG_SPANS and ngx.ctx.KONG_SPANS[1]
+  local id_bin = root_span and root_span.trace_id or utils.get_rand_bytes(16)
+
+  var.request_trace_id = to_hex(id_bin)
+  ngx.log(ngx.ERR, "test log with trace id")
+end
+
+
 -- in the table below the `before` and `after` is to indicate when they run:
 -- before or after the plugins
 return {
@@ -1154,6 +1164,7 @@ return {
       local server_port = var.server_port
       ctx.host_port = HOST_PORTS[server_port] or server_port
       instrumentation.request(ctx)
+      set_trace_id_var()
     end,
   },
   access = {

@@ -81,6 +81,41 @@ return function(options)
   end
 
 
+  do -- patch `ngx.log` to include `ngx.var.request_trace_id`
+
+    local get_phase = ngx.get_phase
+    local ngx_log = ngx.log
+
+    local ngx_var_phases = {
+      set = true,
+      rewrite = true,
+      access = true,
+      content = true,
+      header_filter = true,
+      body_filter = true,
+      log = true,
+      balancer = true,
+    }
+
+    ngx.log = function(...)
+      local trace_id
+      if ngx_var_phases[get_phase()] then
+        trace_id = ngx and ngx.var and ngx.var.request_trace_id
+      end
+
+      if trace_id and trace_id ~= "" then
+        local args = {...}
+        args[#args + 1] = ", trace_id: " .. trace_id
+        return ngx_log(table.unpack(args))
+      end
+      return ngx_log(...)
+    end
+
+    _G.native_ngx_log = ngx_log
+
+  end
+
+
   do
     _G.native_timer_at = ngx.timer.at
     _G.native_timer_every = ngx.timer.every

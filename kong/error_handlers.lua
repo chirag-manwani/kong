@@ -64,7 +64,8 @@ return function(ctx)
 
   else
     local mime_type = utils.get_response_type(accept_header)
-    message = fmt(utils.get_error_template(mime_type), message)
+    local trace_id = ngx and ngx.var and ngx.var.request_trace_id or ""
+    message = fmt(utils.get_error_template(mime_type), message, trace_id)
     headers = { [CONTENT_TYPE] = mime_type }
 
   end
