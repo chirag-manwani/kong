@@ -2,7 +2,6 @@ local _M = {}
 
 local utils = require "kong.tools.utils"
 local dns = require "kong.tools.dns"
-local clear_tab = require "table.clear"
 
 ---@module 'resty.wasmx.proxy_wasm'
 local proxy_wasm
@@ -17,9 +16,7 @@ local tostring = tostring
 local ipairs = ipairs
 local type = type
 local assert = assert
-local concat = table.concat
 local insert = table.insert
-local sha256 = utils.sha256_bin
 
 
 local VERSION_KEY = "filter_chains:version"
@@ -50,10 +47,14 @@ local ENABLED = false
 
 local hash_chain
 do
+  local buffer = require "string.buffer"
+
+  local sha256 = utils.sha256_bin
+
   local HASH_DISABLED = sha256("disabled")
   local HASH_NONE     = sha256("none")
 
-  local buf = {}
+  local buf = buffer.new()
 
   ---@param chain kong.db.schema.entities.filter_chain
   ---@return string
@@ -65,16 +66,16 @@ do
       return HASH_DISABLED
     end
 
-    local n = 0
-    for _, filter in ipairs(chain.filters) do
-      buf[n + 1] = filter.name
-      buf[n + 2] = tostring(filter.enabled)
-      buf[n + 3] = tostring(filter.enabled and sha256(filter.config))
-      n = n + 3
+    local filters = chain.filters
+    for i = 1, #filters do
+      local filter = filters[i]
+
+      buf:put(filter.name)
+      buf:put(tostring(filter.enabled))
+      buf:put(tostring(filter.enabled and sha256(filter.config)))
     end
 
-    local s = concat(buf, "", 1, n)
-    clear_tab(buf)
+    local s = buf:get()
 
     return sha256(s)
   end
