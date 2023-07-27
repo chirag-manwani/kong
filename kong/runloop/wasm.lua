@@ -77,6 +77,8 @@ do
 
     local s = buf:get()
 
+    buf:free()
+
     return sha256(s)
   end
 
